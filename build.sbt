@@ -4,7 +4,7 @@ ThisBuild / scalaVersion := "2.13.8"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "scala-akka-ex",
+    name := "akka-web-cruler",
     idePackagePrefix := Some("com.krushna")
   )
 mainClass := Some("com.krushna.other.HelloWorld")

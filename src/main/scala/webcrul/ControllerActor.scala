@@ -10,6 +10,8 @@ import com.ning.http.client.AsyncHttpClient
 class ControllerActor extends Actor with ActorLogging {
   val client = new AsyncHttpClient()
   var visitedLinks = Set.empty[String]
+  // we can use the context.children to get all the children
+
   var childActor = Set.empty[ActorRef]
   // this timeout is reset by every received message
   context.setReceiveTimeout(12.second)

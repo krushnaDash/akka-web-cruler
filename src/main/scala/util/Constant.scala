@@ -1,6 +1,7 @@
 package com.krushna
 package util
 
+import akka.actor.ActorRef
 import com.ning.http.client.AsyncHttpClient
 
 object Constant {
@@ -19,4 +20,8 @@ object Constant {
   case class Check(link: String, depth: Int)
 
   case class Result(url: String, link: Set[String])
+
+  case class Job(actorRef: ActorRef, url:String, depth:Int)
+
+  val AKKA_DEFAULT_PORT: Int=25520
 }

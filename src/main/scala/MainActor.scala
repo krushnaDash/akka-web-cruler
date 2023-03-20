@@ -1,19 +1,32 @@
 package com.krushna
 
-import akka.actor.{Actor, ActorSystem, Props}
-import com.krushna.MainApp.mainActorSystem
-import com.krushna.webcrul.ControllerActor
+
+import akka.actor.{Actor, ActorSystem, Identify, Props, ReceiveTimeout}
 import com.krushna.util.Constant
+import com.krushna.webcrul.{ControllerActor, Receptionist}
+
+import scala.concurrent.duration.DurationInt
 
 class MainActor extends Actor{
 
-  val controller=context.actorOf(Props[ControllerActor])
-  controller ! Constant.Check(Constant.EX_LINK,2)
+  val receptionist=context.actorOf(Props[Receptionist])
+  receptionist ! Constant.Check(Constant.EX_LINK,1)
+  receptionist ! Constant.Check("https://en.wikipedia.org/wiki/Wiki",1)
+  receptionist ! Constant.Check("https://en.wikipedia.org/wiki/Main_Page",1)
+  receptionist ! Constant.Check("https://en.wikipedia.org/wiki/Wikipedia:Contact_us",1)
+
+
+  context.setReceiveTimeout(900.seconds)
 
   override def receive: Receive = {
     case Constant.Result(url,values)=>
-      println(s"got links for $url ${values.mkString("\n")}")
-      context.stop(controller)
+      println(s"got links for $url -> ${values.mkString("\n")}")
+    case Constant.FAILED =>
+      println("So many request need to wait >>>>")
+    case ReceiveTimeout =>
+     context.stop(self)
+    case e:Exception =>
+    println("Execpetion"+e)
   }
 }
 

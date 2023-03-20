@@ -13,6 +13,7 @@ import scala.util.{Failure, Success}
 class GetLinksActor(client: AsyncHttpClient, url: String, depth: Int) extends Actor with ActorLogging {
   implicit val exec = context.dispatcher
 
+
   override def receive: Receive = {
     /**
      * Call bacak to sender for each links found with depth
@@ -24,7 +25,7 @@ class GetLinksActor(client: AsyncHttpClient, url: String, depth: Int) extends Ac
         case Success(value) =>
           checkLinksSendMsg(requester, AsyncWebClient.findLinks(value))
           stop()
-        case Failure(exception) => sender ! exception
+        case Failure(exception) => sender ! Failure(exception)
       }
     case Constant.ABORT => stop()
   }
@@ -32,14 +33,14 @@ class GetLinksActor(client: AsyncHttpClient, url: String, depth: Int) extends Ac
   def checkLinksSendMsg(requester: ActorRef, links: Iterator[String]) {
     for (link <- links) {
       if (!link.isEmpty) {
-        log.info(s"send message check with link ${link.trim} and dept with $depth")
+        //log.debug(s"send message check with link ${link.trim} and dept with $depth")
         requester ! Constant.Check(link.trim, depth)
       }
     }
   }
 
   def stop(): Unit = {
-    context.parent ! Constant.DONE_FOR_LINK(url)
+    //context.parent ! Constant.DONE_FOR_LINK(url)
     context.stop(self)
   }
 }

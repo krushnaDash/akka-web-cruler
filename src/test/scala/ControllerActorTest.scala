@@ -14,7 +14,7 @@ class ControllerActorTest extends munit.FunSuite {
     implicit val controllerActorSystem = ActorSystem("ConrollerActorTestSystem")
     //val controller = controllerActorSystem.actorOf(Props[ControllerActor], "GetLinksActor")
     val p = TestProbe("TestProbe")
-    val controller = TestActorRef(Props[ControllerActor], p.ref, "GetLinksActor")
+    val controller = TestActorRef(Props(new ControllerActor(Constant.EX_LINK)), p.ref, "GetLinksActor")
     controller ! Constant.Check(Constant.EX_LINK, 1)
     p.awaitAssert(p.msgAvailable, 60.seconds)
     controllerActorSystem.terminate()

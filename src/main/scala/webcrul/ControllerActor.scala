@@ -1,40 +1,52 @@
 package com.krushna
 package webcrul
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
+import util.Constant
 
-import scala.concurrent.duration._
-import com.krushna.util.Constant
+import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout, SupervisorStrategy, Terminated}
 import com.ning.http.client.AsyncHttpClient
 
-class ControllerActor extends Actor with ActorLogging {
+import scala.concurrent.duration.{DurationInt, _}
+import scala.util.Failure
+
+/**
+ * THis is just a example and it's not used show how to use
+ */
+class ControllerActor(url: String) extends Actor with ActorLogging {
   val client = new AsyncHttpClient()
   var visitedLinks = Set.empty[String]
   // we can use the context.children to get all the children
+  context.setReceiveTimeout(200.second)
 
-  var childActor = Set.empty[ActorRef]
-  // this timeout is reset by every received message
-  context.setReceiveTimeout(12.second)
+  override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1.minutes) {
+    case _: Exception => SupervisorStrategy.restart
+  }
 
   override def receive: Receive = {
     case Constant.Check(link, depth) =>
-      log.debug("{} checking with depth {}", link, depth)
+      //log.debug("{} checking with depth {}", link, depth)
       if (!visitedLinks.contains(link) && depth > 0) {
-        val linkActor=context.actorOf(Props(new GetLinksActor(client, link, depth - 1)));
-        childActor += linkActor
+        val linkActor = context.actorOf(Props(new GetLinksActor(client, link, depth - 1)));
         linkActor ! Constant.GET_LINKS
+        context.watch(linkActor)
       }
       visitedLinks += link
 
-    case Constant.DONE_FOR_LINK(link) =>
-      childActor -= sender
-      context.stop(sender)
-      if (childActor.isEmpty) {
-        log.info(s"All links for $link is ${visitedLinks.mkString("\n")}")
-        context.parent ! Constant.Result(link, visitedLinks)
+    case Terminated(_) =>
+      if (context.children.isEmpty) {
+        //log.debug(s"All links for  ${visitedLinks.mkString("\n")}")
+        context.parent ! Constant.Result(url, visitedLinks)
       }
+    case Failure(exception) =>
+      println("ignore the link >>")
+      context.stop(sender)
 
     case ReceiveTimeout =>
-      childActor.foreach(_ ! Constant.ABORT)
+      context.children.foreach(_ ! Constant.ABORT)
+  }
+
+  override def postStop(): Unit = {
+    client.close()
+    super.postStop()
   }
 }

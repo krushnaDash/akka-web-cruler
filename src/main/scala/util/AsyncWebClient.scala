@@ -13,7 +13,7 @@ object AsyncWebClient {
   val logger = Logger(getClass.getName)
 
   def get(url: String, client: AsyncHttpClient)(implicit exec: Executor): Future[String] = {
-    logger.info(s"Hitting to URL -> $url")
+    //logger.debug(s"Hitting to URL -> $url")
     val f = client.prepareGet(url).execute()
     val p = Promise[String]()
     f.addListener(new Runnable {
